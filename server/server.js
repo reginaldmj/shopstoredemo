@@ -9,17 +9,21 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mono-store';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '';
-const ALLOWED_ORIGINS = CORS_ORIGIN.split(',').map(origin => origin.trim()).filter(Boolean);
+const normalizeOrigin = origin => String(origin || '').trim().replace(/\/+$/, '');
+const ALLOWED_ORIGINS = CORS_ORIGIN
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
 
 app.use(cors(
   ALLOWED_ORIGINS.length
     ? {
         origin(origin, callback) {
-          if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+          if (!origin || ALLOWED_ORIGINS.includes(normalizeOrigin(origin))) {
             callback(null, true);
             return;
           }
-          callback(new Error('Not allowed by CORS'));
+          callback(null, false);
         }
       }
     : undefined
