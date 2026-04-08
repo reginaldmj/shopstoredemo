@@ -1,0 +1,19 @@
+body {
+  font-family: Arial;
+  padding: 20px;
+}
+
+#products {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+button {
+  margin-top: 10px;
+}
