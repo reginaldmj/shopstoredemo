@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import Product from './models/Product.js';
 
-await mongoose.connect('mongodb://127.0.0.1:27017/mono-store');
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mono-store';
 
-await Product.deleteMany();
+await mongoose.connect(MONGO_URI);
 
-await Product.insertMany([
+const products = [
   {
     name: "Minimal Watch",
     category: "Accessories",
@@ -116,7 +116,12 @@ await Product.insertMany([
     sizes: ["750ml"],
     colors: ["#d9d2c3", "#1d2730", "#7f8d96"]
   }
-]);
+];
 
-console.log("Seeded");
-process.exit();
+try {
+  await Product.deleteMany();
+  await Product.insertMany(products);
+  console.log(`Seeded ${products.length} products`);
+} finally {
+  await mongoose.disconnect();
+}
