@@ -234,6 +234,7 @@ const state = {
   productsLoaded: false,
   isLoadingProducts: false,
   selectedProductId: null,
+  currentInfoPage: 'about',
   selectedSize: null,
   selectedColor: null,
   currentShopPage: 1,
@@ -777,7 +778,7 @@ function clearFilters() {
   renderShop();
 }
 
-function openDetail(productId) {
+function openDetail(productId, options = {}) {
   const product = getProductById(productId);
   if (!product) return;
 
@@ -825,7 +826,7 @@ function openDetail(productId) {
   const qty = document.querySelector('.detail-actions .qty-stepper span');
   if (qty) qty.textContent = '1';
 
-  showPage('detail');
+  showPage('detail', options);
 }
 
 function renderDetailOptions(product) {
@@ -1056,6 +1057,7 @@ function closeCart() {
 
 function renderInfoPage(pageKey) {
   const page = INFO_PAGES[pageKey] || INFO_PAGES.about;
+  state.currentInfoPage = INFO_PAGES[pageKey] ? pageKey : 'about';
   const eyebrow = document.getElementById('infoEyebrow');
   const title = document.getElementById('infoTitle');
   const intro = document.getElementById('infoIntro');
@@ -1097,7 +1099,29 @@ function renderInfoPage(pageKey) {
   });
 }
 
-function showPage(pageName) {
+function normalizePath(path) {
+  const clean = String(path || '').trim();
+  if (!clean || clean === '/') return '/';
+  return clean.replace(/\/+$/, '') || '/';
+}
+
+function getPathForPage(pageName) {
+  if (pageName === 'home') return '/';
+  if (pageName === 'shop') return '/shop';
+  if (pageName === 'cart') return '/cart';
+  if (pageName === 'checkout') return '/checkout';
+  if (pageName === 'confirmation') return '/confirmation';
+  if (pageName === 'detail') {
+    return state.selectedProductId ? `/product/${encodeURIComponent(state.selectedProductId)}` : '/product';
+  }
+  if (pageName === 'info') {
+    return `/${state.currentInfoPage || 'about'}`;
+  }
+  return '/';
+}
+
+function showPage(pageName, options = {}) {
+  const { skipHistory = false, replaceHistory = false } = options;
   const map = {
     home: 'homePage',
     shop: 'shopPage',
@@ -1119,7 +1143,64 @@ function showPage(pageName) {
   if (pageName === 'checkout' || pageName === 'cart') renderCartViews();
   if (pageName === 'confirmation') renderCheckoutSummary();
 
+  if (!skipHistory && typeof window !== 'undefined' && window.history) {
+    const targetPath = getPathForPage(pageName);
+    const currentPath = normalizePath(window.location.pathname);
+    if (targetPath !== currentPath) {
+      if (replaceHistory) window.history.replaceState({}, '', targetPath);
+      else window.history.pushState({}, '', targetPath);
+    }
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resolveRoute(pathname) {
+  const path = normalizePath(pathname).toLowerCase();
+
+  if (path === '/') {
+    showPage('home', { skipHistory: true });
+    return;
+  }
+
+  if (path === '/shop') {
+    showPage('shop', { skipHistory: true });
+    return;
+  }
+
+  if (path === '/cart') {
+    showPage('cart', { skipHistory: true });
+    return;
+  }
+
+  if (path === '/checkout') {
+    showPage('checkout', { skipHistory: true });
+    return;
+  }
+
+  if (path === '/confirmation') {
+    showPage('confirmation', { skipHistory: true });
+    return;
+  }
+
+  if (path.startsWith('/product/')) {
+    const productId = decodeURIComponent(path.split('/')[2] || '');
+    if (productId) {
+      openDetail(productId, { skipHistory: true });
+      return;
+    }
+    showPage('shop', { skipHistory: true });
+    return;
+  }
+
+  const infoKey = path.slice(1);
+  if (INFO_PAGES[infoKey]) {
+    renderInfoPage(infoKey);
+    showPage('info', { skipHistory: true });
+    return;
+  }
+
+  showPage('home', { skipHistory: false, replaceHistory: true });
 }
 
 function bindGlobalUI() {
@@ -1149,6 +1230,15 @@ function bindGlobalUI() {
   document.getElementById('cartToggle')?.addEventListener('click', openCart);
   document.getElementById('cartClose')?.addEventListener('click', closeCart);
   document.getElementById('overlay')?.addEventListener('click', closeCart);
+
+  document.querySelector('.nav-logo')?.addEventListener('click', e => {
+    e.preventDefault();
+    showPage('home');
+  });
+
+  window.addEventListener('popstate', () => {
+    resolveRoute(window.location.pathname);
+  });
 
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', e => {
@@ -1268,6 +1358,7 @@ async function initialize() {
   await loadProducts();
   await loadCart();
   renderCheckoutSummary();
+  resolveRoute(window.location.pathname);
 }
 
 window.showPage = showPage;
