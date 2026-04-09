@@ -2,7 +2,7 @@ const RAW_API_BASE = (
   (typeof window !== 'undefined' && window.STORE_API_URL) ||
   ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
     ? 'http://127.0.0.1:5000'
-    : 'https://shopstore-h5oe.onrender.com')
+    : 'https://shopstoredemo.onrender.com')
 );
 const API_BASE = RAW_API_BASE.replace(/\/+$/, '').replace(/\/api$/i, '');
 const API = `${API_BASE}/api`;
