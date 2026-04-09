@@ -712,7 +712,18 @@ async function loadProducts() {
 
   try {
     const data = await requestJSON(`${API}/products`);
-    state.products = Array.isArray(data) ? data : [];
+    const apiProducts = Array.isArray(data) ? data : [];
+    if (apiProducts.length === 0) {
+      state.products = FALLBACK_PRODUCTS;
+      showToast('API returned no products. Showing demo catalog.');
+    } else if (apiProducts.length < 6) {
+      const seenNames = new Set(apiProducts.map(p => String(p.name || '').trim().toLowerCase()));
+      const missingFallback = FALLBACK_PRODUCTS.filter(p => !seenNames.has(String(p.name || '').trim().toLowerCase()));
+      state.products = [...apiProducts, ...missingFallback];
+      showToast('Catalog expanded with demo products.');
+    } else {
+      state.products = apiProducts;
+    }
   } catch {
     state.products = FALLBACK_PRODUCTS;
     showToast('API unavailable. Showing demo products.');

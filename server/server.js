@@ -6,11 +6,13 @@ import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
+import Product from './models/Product.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mono-store';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://shopstoredemo.netlify.app';
+const ENABLE_DEBUG_ROUTES = String(process.env.ENABLE_DEBUG_ROUTES || '').toLowerCase() === 'true' || process.env.NODE_ENV !== 'production';
 const normalizeOrigin = origin => String(origin || '').trim().replace(/\/+$/, '');
 const ALLOWED_ORIGINS = CORS_ORIGIN
   .split(',')
@@ -47,6 +49,28 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+
+if (ENABLE_DEBUG_ROUTES) {
+  app.get('/api/debug/products-status', async (req, res) => {
+    try {
+      const dbName = mongoose.connection?.name || '';
+      const productCount = await Product.countDocuments();
+      const sample = await Product.find({}, { name: 1, _id: 0 }).limit(8).lean();
+
+      res.json({
+        ok: true,
+        dbName,
+        productCount,
+        sampleNames: sample.map(item => item.name)
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        message: 'Unable to fetch debug product status'
+      });
+    }
+  });
+}
 
 async function startServer() {
   try {
