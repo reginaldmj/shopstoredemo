@@ -39,7 +39,7 @@ const seedProducts = [
     rating: 4.8,
     reviews: 39,
     description: 'Compact organizer for cables, adapters, and accessories with zip closure.',
-    images: ['https://images.pexels.com/photos/1050340/pexels-photo-1050340.jpeg?auto=compress&cs=tinysrgb&w=1200'],
+    images: ['https://images.unsplash.com/photo-1498049794561-7780e7231661?w=900&q=80'],
     sizes: [],
     colors: ['#2e2e2e', '#ab8f66']
   },

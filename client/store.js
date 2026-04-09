@@ -214,7 +214,7 @@ const FALLBACK_PRODUCTS = [
     rating: 4.8,
     reviews: 39,
     description: 'Compact organizer for cables, adapters, and accessories with zip closure.',
-    images: ['https://images.pexels.com/photos/1050340/pexels-photo-1050340.jpeg?auto=compress&cs=tinysrgb&w=1200'],
+    images: ['https://images.unsplash.com/photo-1498049794561-7780e7231661?w=900&q=80'],
     sizes: [],
     colors: ['#2e2e2e', '#ab8f66'],
     createdAt: '2026-01-22T10:00:00Z'
@@ -762,20 +762,30 @@ async function loadProducts() {
   state.isLoadingProducts = true;
   renderLoadingProducts();
 
+  let usingFallbackCatalog = false;
+
   try {
     const data = await requestJSON(`${API}/products`);
     const apiProducts = Array.isArray(data) ? data : [];
     if (apiProducts.length === 0) {
       state.products = FALLBACK_PRODUCTS;
+      usingFallbackCatalog = true;
       showToast('API returned no products. Showing demo catalog.');
     } else if (apiProducts.length < 8) {
       state.products = FALLBACK_PRODUCTS;
+      usingFallbackCatalog = true;
     } else {
       state.products = apiProducts;
     }
   } catch {
     state.products = FALLBACK_PRODUCTS;
+    usingFallbackCatalog = true;
     showToast('API unavailable. Showing demo products.');
+  }
+
+  // Demo catalog products use synthetic ids, so cart should run in local mode.
+  if (usingFallbackCatalog) {
+    state.useLocalCart = true;
   }
 
   const maxPrice = Math.max(500, ...state.products.map(p => Number(p.price) || 0));
@@ -877,7 +887,22 @@ async function addToCart(productId, qty = 1) {
     await loadCart();
     showToast('Added to cart');
   } catch {
-    showToast('Unable to add item right now.');
+    // If server cart rejects this item (e.g., non-DB demo id), fall back to local cart.
+    state.useLocalCart = true;
+    const found = state.cart.items.find(i => String(i.productId) === String(productId));
+    if (found) {
+      found.qty += normalizedQty;
+    } else {
+      const productSnapshot = getProductById(String(productId));
+      state.cart.items.push({
+        productId: String(productId),
+        qty: normalizedQty,
+        _product: productSnapshot || undefined
+      });
+    }
+    persistLocalCart();
+    renderCartViews();
+    showToast('Added to cart (local)');
   }
 }
 
