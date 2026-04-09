@@ -4,6 +4,8 @@ import cors from 'cors';
 
 import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
+import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profile.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -30,8 +32,21 @@ app.use(cors(
 ));
 app.use(express.json());
 
+const healthHandler = (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'shopstore-api',
+    timestamp: new Date().toISOString()
+  });
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 
 async function startServer() {
   try {

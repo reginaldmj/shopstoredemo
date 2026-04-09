@@ -1,0 +1,48 @@
+@baseUrl = http://127.0.0.1:5000
+@email = jane@example.com
+@password = SuperSecure123!
+@token = paste_token_here
+
+### Health
+GET {{baseUrl}}/health
+
+### API Health
+GET {{baseUrl}}/api/health
+
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Get current user
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Get profile
+GET {{baseUrl}}/api/profile
+Authorization: Bearer {{token}}
+
+### Update profile
+PUT {{baseUrl}}/api/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Jane A. Smith",
+  "bio": "I love minimal design and quality products.",
+  "avatarUrl": "https://example.com/avatar.jpg"
+}
