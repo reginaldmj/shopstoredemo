@@ -97,6 +97,33 @@ input, select, textarea { font-family: inherit; }
   color: var(--ink-2);
 }
 
+.auth-block {
+  max-width: 640px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.auth-submit {
+  width: fit-content;
+  min-width: 160px;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.78rem;
+  margin-top: -4px;
+}
+
 .info-list {
   list-style: none;
   display: grid;
@@ -148,6 +175,17 @@ input, select, textarea { font-family: inherit; }
 .nav-link:hover, .nav-link.active { background: var(--ink); color: var(--white); }
 
 .nav-actions { display: flex; gap: 4px; align-items: center; }
+
+.nav-auth-state {
+  font-size: 0.74rem;
+  color: var(--ink-3);
+  letter-spacing: 0.3px;
+  margin-right: 2px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .nav-icon-btn {
   width: 38px; height: 38px; border-radius: 50%;
@@ -707,7 +745,13 @@ input, select, textarea { font-family: inherit; }
   padding: 10px 14px; font-size: 0.88rem; outline: none; background: var(--white);
   transition: border-color var(--transition);
 }
-.form-field input:focus, .form-field select:focus { border-color: var(--ink); }
+.form-field textarea {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 12px; font-size: 0.9rem; background: #fff;
+  outline: none; transition: border var(--transition), box-shadow var(--transition);
+  resize: vertical;
+}
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--ink); }
 
 .checkout-form .btn-primary { margin-top: 16px; }
 
@@ -795,6 +839,7 @@ input, select, textarea { font-family: inherit; }
 @media (max-width: 768px) {
   .nav-links { display: none; }
   .nav-hamburger { display: flex; }
+  .nav-auth-state { display: none; }
 
   .categories { grid-template-columns: repeat(2, 1fr); }
   .product-grid { grid-template-columns: repeat(2, 1fr); }

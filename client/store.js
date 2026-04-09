@@ -8,6 +8,7 @@ const API_BASE = RAW_API_BASE.replace(/\/+$/, '').replace(/\/api$/i, '');
 const API = `${API_BASE}/api`;
 const TAX_RATE = 0.08;
 const PAGE_SIZE = 8;
+const AUTH_TOKEN_KEY = 'mono-auth-token';
 
 const INFO_PAGES = {
   about: {
@@ -143,6 +144,25 @@ const INFO_PAGES = {
         text: 'For collaborations, wholesale, or media requests, contact partnerships@mono-store.com with your company details and timeline.'
       }
     ]
+  },
+  profile: {
+    eyebrow: 'Account',
+    title: 'Your Profile',
+    intro: 'Manage your account details and keep your profile information up to date.',
+    sections: [
+      {
+        heading: 'Account Access',
+        bullets: [
+          'Sign in to view and update your profile information',
+          'Use the same account for orders, checkout, and support',
+          'Keep your email current to receive order confirmations'
+        ]
+      },
+      {
+        heading: 'Need Help?',
+        text: 'If you have trouble accessing your account, contact support@mono-store.com and we will help you recover access.'
+      }
+    ]
   }
 };
 
@@ -230,6 +250,9 @@ const FALLBACK_PRODUCTS = [
 const state = {
   products: [],
   cart: { items: [] },
+  authToken: '',
+  currentUser: null,
+  profile: null,
   useLocalCart: false,
   productsLoaded: false,
   isLoadingProducts: false,
@@ -260,6 +283,70 @@ function safeText(value) {
     '"': '&quot;',
     "'": '&#39;'
   }[m]));
+}
+
+function getStoredAuthToken() {
+  return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+}
+
+function setStoredAuthToken(token) {
+  if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+  else localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+function setAuthSession(token, user) {
+  state.authToken = token || '';
+  setStoredAuthToken(state.authToken);
+  state.currentUser = user || null;
+  updateNavAuthState();
+}
+
+function clearAuthSession() {
+  state.authToken = '';
+  state.currentUser = null;
+  state.profile = null;
+  setStoredAuthToken('');
+  updateNavAuthState();
+}
+
+function updateNavAuthState() {
+  const authState = document.getElementById('authState');
+  if (!authState) return;
+
+  if (state.currentUser?.name) {
+    authState.textContent = `Hi, ${state.currentUser.name}`;
+    return;
+  }
+
+  authState.textContent = 'Guest';
+}
+
+function clearFieldError(input) {
+  const field = input?.parentElement;
+  if (!field) return;
+  const msg = field.querySelector('.field-error');
+  if (msg) msg.remove();
+  input.removeAttribute('aria-invalid');
+}
+
+function setFieldError(input, message) {
+  const field = input?.parentElement;
+  if (!field) return;
+  clearFieldError(input);
+  const msg = document.createElement('p');
+  msg.className = 'field-error';
+  msg.textContent = message;
+  field.appendChild(msg);
+  input.setAttribute('aria-invalid', 'true');
+}
+
+function clearFormErrors(form) {
+  if (!form) return;
+  form.querySelectorAll('input, textarea').forEach(input => clearFieldError(input));
+}
+
+function isEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
 }
 
 function getProductId(product) {
@@ -322,11 +409,301 @@ function readLocalCart() {
 }
 
 async function requestJSON(url, options) {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+  const headers = {
+    ...(options?.headers || {})
+  };
+
+  if (state.authToken && !headers.Authorization) {
+    headers.Authorization = `Bearer ${state.authToken}`;
   }
-  return res.json();
+
+  const res = await fetch(url, {
+    ...(options || {}),
+    headers
+  });
+
+  let data = null;
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    data = await res.json();
+  }
+
+  if (!res.ok) {
+    const message = data?.message || `HTTP ${res.status}`;
+    const error = new Error(message);
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+
+async function loadCurrentUser() {
+  if (!state.authToken) return null;
+
+  const data = await requestJSON(`${API}/auth/me`);
+  state.currentUser = data?.user || null;
+  return state.currentUser;
+}
+
+async function loadProfile() {
+  if (!state.authToken) return null;
+
+  const data = await requestJSON(`${API}/profile`);
+  state.profile = data?.profile || null;
+  return state.profile;
+}
+
+async function refreshAuthState() {
+  if (!state.authToken) return;
+
+  try {
+    await loadCurrentUser();
+    await loadProfile();
+    updateNavAuthState();
+  } catch {
+    clearAuthSession();
+  }
+}
+
+function renderProfilePage() {
+  state.currentInfoPage = 'profile';
+  const eyebrow = document.getElementById('infoEyebrow');
+  const title = document.getElementById('infoTitle');
+  const intro = document.getElementById('infoIntro');
+  const content = document.getElementById('infoContent');
+
+  if (eyebrow) eyebrow.textContent = 'Account';
+  if (title) title.textContent = state.currentUser ? 'Your Profile' : 'Sign In or Create Account';
+  if (intro) {
+    intro.textContent = state.currentUser
+      ? 'Update your account details below. Changes are saved to your profile in real time.'
+      : 'Sign in to access your profile, or create a new account in seconds.';
+  }
+
+  if (!content) return;
+
+  if (!state.currentUser || !state.authToken) {
+    content.innerHTML = `
+      <section class="info-block auth-block">
+        <h3>Sign In</h3>
+        <form id="loginForm" class="auth-form">
+          <div class="form-field">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="jane@example.com" required />
+          </div>
+          <div class="form-field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter password" required />
+          </div>
+          <button class="btn-primary auth-submit" type="submit">Sign In</button>
+        </form>
+      </section>
+
+      <section class="info-block auth-block">
+        <h3>Create Account</h3>
+        <form id="registerForm" class="auth-form">
+          <div class="form-field">
+            <label>Full Name</label>
+            <input type="text" name="name" placeholder="Jane Smith" required />
+          </div>
+          <div class="form-field">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="jane@example.com" required />
+          </div>
+          <div class="form-field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="At least 8 characters" minlength="8" required />
+          </div>
+          <button class="btn-outline auth-submit" type="submit">Create Account</button>
+        </form>
+      </section>
+    `;
+
+    const loginForm = document.getElementById('loginForm');
+    loginForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+      clearFormErrors(loginForm);
+      const form = new FormData(loginForm);
+      const email = String(form.get('email') || '').trim();
+      const password = String(form.get('password') || '');
+      const emailInput = loginForm.querySelector('input[name="email"]');
+      const passwordInput = loginForm.querySelector('input[name="password"]');
+
+      let invalid = false;
+      if (!isEmail(email)) {
+        setFieldError(emailInput, 'Enter a valid email address.');
+        invalid = true;
+      }
+      if (!password) {
+        setFieldError(passwordInput, 'Password is required.');
+        invalid = true;
+      }
+      if (invalid) return;
+
+      try {
+        const data = await requestJSON(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password
+          })
+        });
+
+        setAuthSession(data?.token, data?.user);
+        await loadProfile();
+        showToast('Signed in successfully');
+        renderProfilePage();
+      } catch (error) {
+        showToast(error.message || 'Unable to sign in');
+      }
+    });
+
+    const registerForm = document.getElementById('registerForm');
+    registerForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+      clearFormErrors(registerForm);
+      const form = new FormData(registerForm);
+      const name = String(form.get('name') || '').trim();
+      const email = String(form.get('email') || '').trim();
+      const password = String(form.get('password') || '');
+      const nameInput = registerForm.querySelector('input[name="name"]');
+      const emailInput = registerForm.querySelector('input[name="email"]');
+      const passwordInput = registerForm.querySelector('input[name="password"]');
+
+      let invalid = false;
+      if (name.length < 2) {
+        setFieldError(nameInput, 'Name must be at least 2 characters.');
+        invalid = true;
+      }
+      if (!isEmail(email)) {
+        setFieldError(emailInput, 'Enter a valid email address.');
+        invalid = true;
+      }
+      if (password.length < 8) {
+        setFieldError(passwordInput, 'Password must be at least 8 characters.');
+        invalid = true;
+      }
+      if (invalid) return;
+
+      try {
+        const data = await requestJSON(`${API}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            password
+          })
+        });
+
+        setAuthSession(data?.token, data?.user);
+        await loadProfile();
+        showToast('Account created');
+        renderProfilePage();
+      } catch (error) {
+        showToast(error.message || 'Unable to create account');
+      }
+    });
+
+    return;
+  }
+
+  const profileData = state.profile || state.currentUser;
+  const profileName = safeText(profileData?.name || state.currentUser?.name || '');
+  const profileEmail = safeText(state.currentUser?.email || profileData?.email || '');
+  const profileBio = safeText(profileData?.bio || '');
+  const profileAvatarUrl = safeText(profileData?.avatarUrl || '');
+
+  content.innerHTML = `
+    <section class="info-block auth-block">
+      <h3>Profile Details</h3>
+      <form id="profileForm" class="auth-form">
+        <div class="form-field">
+          <label>Full Name</label>
+          <input type="text" name="name" value="${profileName}" required />
+        </div>
+        <div class="form-field">
+          <label>Email</label>
+          <input type="email" value="${profileEmail}" disabled />
+        </div>
+        <div class="form-field">
+          <label>Bio</label>
+          <textarea name="bio" rows="4" placeholder="Tell us a little about yourself">${profileBio}</textarea>
+        </div>
+        <div class="form-field">
+          <label>Avatar URL</label>
+          <input type="url" name="avatarUrl" value="${profileAvatarUrl}" placeholder="https://example.com/avatar.jpg" />
+        </div>
+        <div class="auth-actions">
+          <button class="btn-primary auth-submit" type="submit">Save Profile</button>
+          <button class="btn-outline auth-submit" type="button" id="logoutBtn">Sign Out</button>
+        </div>
+      </form>
+    </section>
+  `;
+
+  const profileForm = document.getElementById('profileForm');
+  profileForm?.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearFormErrors(profileForm);
+    const form = new FormData(profileForm);
+    const name = String(form.get('name') || '').trim();
+    const avatarUrl = String(form.get('avatarUrl') || '').trim();
+    const nameInput = profileForm.querySelector('input[name="name"]');
+    const avatarInput = profileForm.querySelector('input[name="avatarUrl"]');
+
+    let invalid = false;
+    if (name.length < 2) {
+      setFieldError(nameInput, 'Name must be at least 2 characters.');
+      invalid = true;
+    }
+    if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) {
+      setFieldError(avatarInput, 'Avatar URL must start with http:// or https://');
+      invalid = true;
+    }
+    if (invalid) return;
+
+    try {
+      const data = await requestJSON(`${API}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          bio: String(form.get('bio') || '').trim(),
+          avatarUrl
+        })
+      });
+
+      state.profile = data?.profile || null;
+      if (state.profile?.name && state.currentUser) {
+        state.currentUser.name = state.profile.name;
+      }
+      updateNavAuthState();
+      showToast('Profile updated');
+      renderProfilePage();
+    } catch (error) {
+      showToast(error.message || 'Unable to update profile');
+    }
+  });
+
+  document.getElementById('logoutBtn')?.addEventListener('click', () => {
+    clearAuthSession();
+    showToast('Signed out');
+    renderProfilePage();
+  });
+}
+
+async function openProfilePage(options = {}) {
+  renderProfilePage();
+  showPage('info', options);
+
+  if (!state.authToken) return;
+
+  await refreshAuthState();
+  if (state.currentInfoPage === 'profile') {
+    renderProfilePage();
+  }
 }
 
 async function loadProducts() {
@@ -1056,6 +1433,11 @@ function closeCart() {
 }
 
 function renderInfoPage(pageKey) {
+  if (pageKey === 'profile') {
+    renderProfilePage();
+    return;
+  }
+
   const page = INFO_PAGES[pageKey] || INFO_PAGES.about;
   state.currentInfoPage = INFO_PAGES[pageKey] ? pageKey : 'about';
   const eyebrow = document.getElementById('infoEyebrow');
@@ -1183,6 +1565,11 @@ function resolveRoute(pathname) {
     return;
   }
 
+  if (path === '/profile') {
+    openProfilePage({ skipHistory: true });
+    return;
+  }
+
   if (path.startsWith('/product/')) {
     const productId = decodeURIComponent(path.split('/')[2] || '');
     if (productId) {
@@ -1225,6 +1612,10 @@ function bindGlobalUI() {
 
   document.getElementById('searchInput')?.addEventListener('input', e => {
     setSearch(e.target.value);
+  });
+
+  document.getElementById('accountToggle')?.addEventListener('click', () => {
+    openProfilePage();
   });
 
   document.getElementById('cartToggle')?.addEventListener('click', openCart);
@@ -1351,7 +1742,14 @@ function bindGlobalUI() {
 }
 
 async function initialize() {
+  state.authToken = getStoredAuthToken();
   bindGlobalUI();
+  updateNavAuthState();
+
+  if (state.authToken) {
+    await refreshAuthState();
+  }
+
   // Load products FIRST so that when loadCart runs, getProductById() works.
   // This eliminates the race condition where local cart items couldn't be
   // resolved to products because state.products was still empty.
