@@ -55,6 +55,67 @@ input, select, textarea { font-family: inherit; }
 .page-container { max-width: 1100px; margin: 0 auto; padding: 60px 24px; }
 .page-heading { font-family: var(--ff-display); font-size: 2rem; font-weight: 400; margin-bottom: 40px; }
 
+.info-page {
+  max-width: 900px;
+}
+
+.info-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.info-intro {
+  font-size: 1.05rem;
+  color: var(--ink-3);
+  max-width: 760px;
+  margin: -20px 0 30px;
+}
+
+.info-content {
+  display: grid;
+  gap: 24px;
+}
+
+.info-block {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+}
+
+.info-block h3 {
+  font-family: var(--ff-display);
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.info-block p {
+  color: var(--ink-2);
+}
+
+.info-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.info-list li {
+  color: var(--ink-2);
+  padding-left: 16px;
+  position: relative;
+}
+
+.info-list li::before {
+  content: '\2022';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
 /* ── Navbar ─────────────────────────────────────────────────────────── */
 .navbar {
   position: sticky; top: 0; z-index: 100;

@@ -1,12 +1,150 @@
-const API_BASE = (
+const RAW_API_BASE = (
   (typeof window !== 'undefined' && window.STORE_API_URL) ||
   ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
     ? 'http://127.0.0.1:5000'
-    : 'https://your-backend.onrender.com')
-).replace(/\/$/, '');
+    : 'https://shopstore-h5oe.onrender.com')
+);
+const API_BASE = RAW_API_BASE.replace(/\/+$/, '').replace(/\/api$/i, '');
 const API = `${API_BASE}/api`;
 const TAX_RATE = 0.08;
 const PAGE_SIZE = 8;
+
+const INFO_PAGES = {
+  about: {
+    eyebrow: 'Company',
+    title: 'About MONO',
+    intro: 'MONO creates modern essentials designed for daily life. We focus on fewer, better products that pair timeless form with durable function.',
+    sections: [
+      {
+        heading: 'Our Design Philosophy',
+        text: 'We build around clarity. Every product starts from a real routine, then we refine materials, proportions, and details until the final piece feels effortless to use.'
+      },
+      {
+        heading: 'How We Build',
+        bullets: [
+          'Small-batch production with trusted manufacturing partners',
+          'Material-first decisions based on longevity and repairability',
+          'Quality control on fit, finish, and daily wear performance'
+        ]
+      },
+      {
+        heading: 'What Matters To Us',
+        text: 'Honest pricing, transparent sourcing, and products you can keep for years. We are not here for fast drops. We are here for lasting value.'
+      }
+    ]
+  },
+  journal: {
+    eyebrow: 'Stories',
+    title: 'MONO Journal',
+    intro: 'A running log of our product process, creative references, and practical guides for caring for the things you own.',
+    sections: [
+      {
+        heading: 'Latest Notes',
+        bullets: [
+          'Field Notes: Building a carry system that scales from weekday to weekend',
+          'Material Study: Why we chose brushed cotton twill for outer layers',
+          'Studio Log: 5 details we changed before final production'
+        ]
+      },
+      {
+        heading: 'Coming Soon',
+        text: 'Long-form interviews with makers, behind-the-scenes photo essays, and a monthly look at what we are prototyping next.'
+      }
+    ]
+  },
+  faq: {
+    eyebrow: 'Help',
+    title: 'Frequently Asked Questions',
+    intro: 'Answers to common order, product, and payment questions.',
+    sections: [
+      {
+        heading: 'Orders & Payments',
+        bullets: [
+          'We accept all major credit cards and secure checkout payments.',
+          'You can update your order within 1 hour of placing it.',
+          'Promo codes can be applied in cart before checkout.'
+        ]
+      },
+      {
+        heading: 'Products',
+        bullets: [
+          'Product measurements are listed on each detail page.',
+          'If you are between sizes, we usually recommend sizing up.',
+          'Care instructions are included with each item and in product specs.'
+        ]
+      }
+    ]
+  },
+  'shipping-policy': {
+    eyebrow: 'Help',
+    title: 'Shipping Policy',
+    intro: 'We process orders quickly and provide tracking on every shipment.',
+    sections: [
+      {
+        heading: 'Processing Times',
+        bullets: [
+          'Orders are processed Monday through Friday.',
+          'Most orders ship within 1-2 business days.',
+          'During launches and holidays, processing may take up to 3 business days.'
+        ]
+      },
+      {
+        heading: 'Delivery Estimates',
+        bullets: [
+          'Standard shipping: 3-7 business days',
+          'Expedited shipping: 2-3 business days',
+          'International delivery windows vary by destination and customs'
+        ]
+      },
+      {
+        heading: 'Tracking',
+        text: 'Once your package ships, you will receive an email with tracking details. If tracking has not updated after 48 hours, contact us and we will investigate.'
+      }
+    ]
+  },
+  returns: {
+    eyebrow: 'Help',
+    title: 'Returns & Exchanges',
+    intro: 'If something is not right, we will help make it right.',
+    sections: [
+      {
+        heading: 'Return Window',
+        bullets: [
+          'Returns are accepted within 30 days of delivery.',
+          'Items must be unworn, unwashed, and in original packaging.',
+          'Final sale items are not eligible for return.'
+        ]
+      },
+      {
+        heading: 'Exchanges',
+        text: 'Need a different size or color? Start an exchange request through support and we will reserve replacement stock when available.'
+      },
+      {
+        heading: 'Refund Timing',
+        text: 'Approved returns are refunded to your original payment method within 5-10 business days after warehouse inspection.'
+      }
+    ]
+  },
+  'contact-us': {
+    eyebrow: 'Help',
+    title: 'Contact Us',
+    intro: 'Our support team replies quickly and can help with orders, sizing, returns, and product questions.',
+    sections: [
+      {
+        heading: 'Customer Support',
+        bullets: [
+          'Email: support@mono-store.com',
+          'Hours: Monday-Friday, 9:00 AM-6:00 PM ET',
+          'Average response time: under 24 hours'
+        ]
+      },
+      {
+        heading: 'Press & Partnerships',
+        text: 'For collaborations, wholesale, or media requests, contact partnerships@mono-store.com with your company details and timeline.'
+      }
+    ]
+  }
+};
 
 const FALLBACK_PRODUCTS = [
   {
@@ -93,6 +231,7 @@ const state = {
   products: [],
   cart: { items: [] },
   useLocalCart: false,
+  productsLoaded: false,
   isLoadingProducts: false,
   selectedProductId: null,
   selectedSize: null,
@@ -134,7 +273,10 @@ function getCartItems() {
   return (state.cart?.items || []).map(item => {
     const fromItem = typeof item.productId === 'object' ? item.productId : null;
     const id = fromItem ? getProductId(fromItem) : String(item.productId);
-    const product = fromItem || getProductById(id);
+    // 1) populated product object on the item itself (API response)
+    // 2) look up from loaded products list
+    // 3) fall back to _product snapshot saved during local cart persist
+    const product = fromItem || getProductById(id) || item._product || null;
     return {
       productId: id,
       product,
@@ -156,7 +298,14 @@ function showToast(message) {
 
 function persistLocalCart() {
   if (!state.useLocalCart) return;
-  localStorage.setItem('mono-cart', JSON.stringify(state.cart));
+  // Store product snapshots so cart renders even before /api/products responds
+  const itemsWithSnapshots = state.cart.items.map(item => {
+    const pid = String(item.productId);
+    const product = getProductById(pid) ||
+      (typeof item.productId === 'object' ? item.productId : null);
+    return { productId: pid, qty: item.qty, _product: product || undefined };
+  });
+  localStorage.setItem('mono-cart', JSON.stringify({ items: itemsWithSnapshots }));
 }
 
 function readLocalCart() {
@@ -202,9 +351,16 @@ async function loadProducts() {
 
   updatePrice(maxPrice);
   state.isLoadingProducts = false;
+  state.productsLoaded = true;
   updateCategoryCounts();
   renderFeatured();
   renderShop();
+
+  // If the cart was already loaded (local fallback or API) before products
+  // finished, re-render now so product lookups succeed and the badge is correct.
+  if (state.cart.items.length > 0) {
+    renderCartViews();
+  }
 }
 
 function renderLoadingProducts() {
@@ -246,6 +402,8 @@ async function loadCart() {
     showToast('Cart API unavailable. Using local cart.');
   }
 
+  // Always re-render after products are confirmed loaded so local cart
+  // item lookup (getProductById) succeeds and the badge/drawer are correct.
   renderCartViews();
 }
 
@@ -254,8 +412,18 @@ async function addToCart(productId, qty = 1) {
 
   if (state.useLocalCart) {
     const found = state.cart.items.find(i => String(i.productId) === String(productId));
-    if (found) found.qty += normalizedQty;
-    else state.cart.items.push({ productId: String(productId), qty: normalizedQty });
+    if (found) {
+      found.qty += normalizedQty;
+    } else {
+      // Store a _product snapshot so the item renders on next page load even
+      // before /api/products has responded (fixes the local-cart race condition).
+      const productSnapshot = getProductById(String(productId));
+      state.cart.items.push({
+        productId: String(productId),
+        qty: normalizedQty,
+        _product: productSnapshot || undefined
+      });
+    }
     persistLocalCart();
     renderCartViews();
     showToast('Added to cart');
@@ -886,6 +1054,49 @@ function closeCart() {
   document.body.style.overflow = '';
 }
 
+function renderInfoPage(pageKey) {
+  const page = INFO_PAGES[pageKey] || INFO_PAGES.about;
+  const eyebrow = document.getElementById('infoEyebrow');
+  const title = document.getElementById('infoTitle');
+  const intro = document.getElementById('infoIntro');
+  const content = document.getElementById('infoContent');
+
+  if (eyebrow) eyebrow.textContent = page.eyebrow;
+  if (title) title.textContent = page.title;
+  if (intro) intro.textContent = page.intro;
+
+  if (!content) return;
+  content.innerHTML = '';
+
+  page.sections.forEach(section => {
+    const block = document.createElement('section');
+    block.className = 'info-block';
+
+    const heading = document.createElement('h3');
+    heading.textContent = section.heading;
+    block.appendChild(heading);
+
+    if (Array.isArray(section.bullets) && section.bullets.length) {
+      const list = document.createElement('ul');
+      list.className = 'info-list';
+      section.bullets.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+      });
+      block.appendChild(list);
+    }
+
+    if (section.text) {
+      const text = document.createElement('p');
+      text.textContent = section.text;
+      block.appendChild(text);
+    }
+
+    content.appendChild(block);
+  });
+}
+
 function showPage(pageName) {
   const map = {
     home: 'homePage',
@@ -893,7 +1104,8 @@ function showPage(pageName) {
     detail: 'detailPage',
     cart: 'cartPage',
     checkout: 'checkoutPage',
-    confirmation: 'confirmationPage'
+    confirmation: 'confirmationPage',
+    info: 'infoPage'
   };
 
   Object.values(map).forEach(id => {
@@ -941,20 +1153,53 @@ function bindGlobalUI() {
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
-      const label = link.textContent.trim().toLowerCase();
+      const route = link.dataset.page || link.textContent.trim().toLowerCase();
       document.querySelectorAll('.nav-link').forEach(node => node.classList.remove('active'));
       link.classList.add('active');
-      if (label === 'shop') showPage('shop');
-      else showPage('home');
+
+      if (route === 'shop') {
+        showPage('shop');
+        return;
+      }
+
+      if (route === 'about' || route === 'journal') {
+        renderInfoPage(route);
+        showPage('info');
+        return;
+      }
+
+      showPage('home');
     });
   });
 
   document.querySelectorAll('.mobile-menu a').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
+      const route = link.dataset.page || link.textContent.trim().toLowerCase();
       document.getElementById('mobileMenu')?.classList.remove('open');
-      if (link.textContent.trim().toLowerCase() === 'shop') showPage('shop');
-      else showPage('home');
+
+      if (route === 'shop') {
+        showPage('shop');
+        return;
+      }
+
+      if (route === 'about' || route === 'journal') {
+        renderInfoPage(route);
+        showPage('info');
+        return;
+      }
+
+      showPage('home');
+    });
+  });
+
+  document.querySelectorAll('.footer a[data-page]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const route = link.dataset.page;
+      if (!route) return;
+      renderInfoPage(route);
+      showPage('info');
     });
   });
 
@@ -1017,6 +1262,9 @@ function bindGlobalUI() {
 
 async function initialize() {
   bindGlobalUI();
+  // Load products FIRST so that when loadCart runs, getProductById() works.
+  // This eliminates the race condition where local cart items couldn't be
+  // resolved to products because state.products was still empty.
   await loadProducts();
   await loadCart();
   renderCheckoutSummary();

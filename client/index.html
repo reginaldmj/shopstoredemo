@@ -20,10 +20,10 @@
       <a href="#" class="nav-logo">MONO</a>
 
       <nav class="nav-links" id="navLinks">
-        <a href="#" class="nav-link active">Shop</a>
+        <a href="#" class="nav-link active" data-page="shop">Shop</a>
         <a href="#" class="nav-link">Collections</a>
-        <a href="#" class="nav-link">About</a>
-        <a href="#" class="nav-link">Journal</a>
+        <a href="#" class="nav-link" data-page="about">About</a>
+        <a href="#" class="nav-link" data-page="journal">Journal</a>
       </nav>
 
       <div class="nav-actions">
@@ -53,10 +53,10 @@
   <!-- ═══════════════════════════════ MOBILE MENU ═══════════════════════════ -->
   <div class="mobile-menu" id="mobileMenu">
     <nav>
-      <a href="#">Shop</a>
+      <a href="#" data-page="shop">Shop</a>
       <a href="#">Collections</a>
-      <a href="#">About</a>
-      <a href="#">Journal</a>
+      <a href="#" data-page="about">About</a>
+      <a href="#" data-page="journal">Journal</a>
     </nav>
   </div>
 
@@ -401,6 +401,16 @@
     </div>
   </main>
 
+  <!-- ═══════════════════════════════ PAGE: INFO ═══════════════════════════ -->
+  <main id="infoPage" class="page">
+    <div class="page-container info-page">
+      <p class="info-eyebrow" id="infoEyebrow">Company</p>
+      <h1 class="page-heading" id="infoTitle">About MONO</h1>
+      <p class="info-intro" id="infoIntro"></p>
+      <div class="info-content" id="infoContent"></div>
+    </div>
+  </main>
+
   <!-- ════════════════════════════════ FOOTER ══════════════════════════════ -->
   <footer class="footer">
     <div class="footer-grid">
@@ -417,17 +427,17 @@
       </div>
       <div class="footer-col">
         <h4>Help</h4>
-        <a href="#">FAQ</a>
-        <a href="#">Shipping Policy</a>
-        <a href="#">Returns</a>
-        <a href="#">Contact Us</a>
+        <a href="#" data-page="faq">FAQ</a>
+        <a href="#" data-page="shipping-policy">Shipping Policy</a>
+        <a href="#" data-page="returns">Returns</a>
+        <a href="#" data-page="contact-us">Contact Us</a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
-        <a href="#">About</a>
-        <a href="#">Journal</a>
+        <a href="#" data-page="about">About</a>
+        <a href="#" data-page="journal">Journal</a>
         <a href="#">Sustainability</a>
-        <a href="#">Careers</a>
+        <!-- <a href="#">Careers</a> -->
       </div>
     </div>
     <div class="footer-bottom">
@@ -441,7 +451,7 @@
   <script>
     // Local: http://127.0.0.1:5000
     // Production: https://your-backend.onrender.com
-    window.STORE_API_URL = window.STORE_API_URL || 'https://shopstore-demo.onrender.com/';
+    window.STORE_API_URL = window.STORE_API_URL || 'https://shopstore-h5oe.onrender.com';
   </script>
   <script src="store.js"></script>
 </body>
