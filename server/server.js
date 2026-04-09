@@ -7,12 +7,14 @@ import cartRoutes from './routes/cart.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import Product from './models/Product.js';
+import seedProducts from './data/seedProducts.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mono-store';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://shopstoredemo.netlify.app';
 const ENABLE_DEBUG_ROUTES = String(process.env.ENABLE_DEBUG_ROUTES || '').toLowerCase() === 'true' || process.env.NODE_ENV !== 'production';
+const ADMIN_SEED_KEY = process.env.ADMIN_SEED_KEY || '';
 const normalizeOrigin = origin => String(origin || '').trim().replace(/\/+$/, '');
 const ALLOWED_ORIGINS = CORS_ORIGIN
   .split(',')
@@ -49,6 +51,25 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+
+app.post('/api/admin/seed-products', async (req, res) => {
+  if (!ADMIN_SEED_KEY) {
+    return res.status(404).json({ message: 'Not found' });
+  }
+
+  const providedKey = req.headers['x-admin-seed-key'];
+  if (providedKey !== ADMIN_SEED_KEY) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    await Product.deleteMany({});
+    await Product.insertMany(seedProducts);
+    return res.json({ ok: true, seeded: seedProducts.length });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Failed to seed products' });
+  }
+});
 
 if (ENABLE_DEBUG_ROUTES) {
   app.get('/api/debug/products-status', async (req, res) => {

@@ -1,0 +1,6 @@
+@baseUrl = http://127.0.0.1:5000
+@seedKey = replace_with_admin_seed_key
+
+### Trigger Product Reseed (Protected)
+POST {{baseUrl}}/api/admin/seed-products
+x-admin-seed-key: {{seedKey}}

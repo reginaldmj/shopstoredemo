@@ -214,7 +214,7 @@ const FALLBACK_PRODUCTS = [
     rating: 4.8,
     reviews: 39,
     description: 'Compact organizer for cables, adapters, and accessories with zip closure.',
-    images: ['https://images.unsplash.com/photo-1498049794561-7780e7231661?w=900&q=80'],
+    images: ['https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=900&q=80'],
     sizes: [],
     colors: ['#2e2e2e', '#ab8f66'],
     createdAt: '2026-01-22T10:00:00Z'
@@ -227,7 +227,7 @@ const FALLBACK_PRODUCTS = [
     rating: 4.5,
     reviews: 71,
     description: 'Structured carry bag with reinforced handles and water-resistant finish.',
-    images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&q=80'],
+    images: ['https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&q=80'],
     sizes: [],
     colors: ['#d4c3a3', '#1d262f'],
     createdAt: '2026-03-20T10:00:00Z'
@@ -240,10 +240,62 @@ const FALLBACK_PRODUCTS = [
     rating: 4.4,
     reviews: 52,
     description: 'Heavyweight brushed fleece hoodie with relaxed fit and clean finish.',
-    images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&q=80'],
+    images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=900&q=80'],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['#0f1823', '#f0ede6', '#7f6757'],
     createdAt: '2026-02-09T10:00:00Z'
+  },
+  {
+    _id: 'f7',
+    name: 'Trail Running Cap',
+    category: 'Accessories',
+    price: 36,
+    rating: 4.3,
+    reviews: 28,
+    description: 'Breathable low-profile cap for running sessions and sunny commutes.',
+    images: ['https://images.unsplash.com/photo-1521369909029-2afed882baee?w=900&q=80'],
+    sizes: ['One Size'],
+    colors: ['#171717', '#c7bca8', '#4e657a'],
+    createdAt: '2026-03-24T10:00:00Z'
+  },
+  {
+    _id: 'f8',
+    name: 'Everyday Tee',
+    category: 'Apparel',
+    price: 38,
+    rating: 4.5,
+    reviews: 87,
+    description: 'Midweight cotton tee with a tailored cut and soft-washed texture.',
+    images: ['https://images.unsplash.com/photo-1521577352947-9bb58764b69a?w=900&q=80'],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['#ffffff', '#222222', '#8f7760'],
+    createdAt: '2026-03-26T10:00:00Z'
+  },
+  {
+    _id: 'f9',
+    name: 'Desk Lamp Mini',
+    category: 'Home',
+    price: 68,
+    rating: 4.6,
+    reviews: 33,
+    description: 'Compact aluminum desk lamp with warm dimmable LED glow.',
+    images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=900&q=80'],
+    sizes: [],
+    colors: ['#f3efe8', '#3b3b3b'],
+    createdAt: '2026-03-29T10:00:00Z'
+  },
+  {
+    _id: 'f10',
+    name: 'Travel Bottle 750ml',
+    category: 'Lifestyle',
+    price: 29,
+    rating: 4.7,
+    reviews: 102,
+    description: 'Double-wall insulated bottle that keeps drinks cold or hot for hours.',
+    images: ['https://images.unsplash.com/photo-1523362628745-0c100150b504?w=900&q=80'],
+    sizes: ['750ml'],
+    colors: ['#d9d2c3', '#1d2730', '#7f8d96'],
+    createdAt: '2026-03-31T10:00:00Z'
   }
 ];
 
@@ -716,11 +768,9 @@ async function loadProducts() {
     if (apiProducts.length === 0) {
       state.products = FALLBACK_PRODUCTS;
       showToast('API returned no products. Showing demo catalog.');
-    } else if (apiProducts.length < 6) {
-      const seenNames = new Set(apiProducts.map(p => String(p.name || '').trim().toLowerCase()));
-      const missingFallback = FALLBACK_PRODUCTS.filter(p => !seenNames.has(String(p.name || '').trim().toLowerCase()));
-      state.products = [...apiProducts, ...missingFallback];
-      showToast('Catalog expanded with demo products.');
+    } else if (apiProducts.length < 8) {
+      state.products = FALLBACK_PRODUCTS;
+      showToast('API catalog incomplete. Showing full demo catalog.');
     } else {
       state.products = apiProducts;
     }
