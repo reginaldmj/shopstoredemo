@@ -214,7 +214,7 @@ const FALLBACK_PRODUCTS = [
     rating: 4.8,
     reviews: 39,
     description: 'Compact organizer for cables, adapters, and accessories with zip closure.',
-    images: ['https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=900&q=80'],
+    images: ['https://images.pexels.com/photos/1050340/pexels-photo-1050340.jpeg?auto=compress&cs=tinysrgb&w=1200'],
     sizes: [],
     colors: ['#2e2e2e', '#ab8f66'],
     createdAt: '2026-01-22T10:00:00Z'
@@ -227,7 +227,7 @@ const FALLBACK_PRODUCTS = [
     rating: 4.5,
     reviews: 71,
     description: 'Structured carry bag with reinforced handles and water-resistant finish.',
-    images: ['https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&q=80'],
+    images: ['https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=1200'],
     sizes: [],
     colors: ['#d4c3a3', '#1d262f'],
     createdAt: '2026-03-20T10:00:00Z'
@@ -240,7 +240,7 @@ const FALLBACK_PRODUCTS = [
     rating: 4.4,
     reviews: 52,
     description: 'Heavyweight brushed fleece hoodie with relaxed fit and clean finish.',
-    images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=900&q=80'],
+    images: ['https://images.pexels.com/photos/6311392/pexels-photo-6311392.jpeg?auto=compress&cs=tinysrgb&w=1200'],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['#0f1823', '#f0ede6', '#7f6757'],
     createdAt: '2026-02-09T10:00:00Z'
@@ -770,7 +770,6 @@ async function loadProducts() {
       showToast('API returned no products. Showing demo catalog.');
     } else if (apiProducts.length < 8) {
       state.products = FALLBACK_PRODUCTS;
-      showToast('API catalog incomplete. Showing full demo catalog.');
     } else {
       state.products = apiProducts;
     }
