@@ -1,3 +1,6 @@
+// Product API routes for serving the store catalog.
+// This module exposes endpoints used by the client to load product listings.
+
 import express from 'express';
 import Product from '../models/Product.js';
 

@@ -1,6 +1,25 @@
+// Server entrypoint for the ShopStore backend API.
+//
+// High-value notes:
+// - This file bootstraps the Express app, mounts API routes, serves the
+//   static client assets, and establishes a Mongoose connection to MongoDB.
+// - Environment-driven behavior (CORS origins, debug routes, admin seed) is
+//   centralized in `server/utils/config.js`. Keep security-sensitive values
+//   (e.g., `JWT_SECRET`, `ADMIN_SEED_KEY`) out of source control and in env.
+// - The server serves the contents of `client/` as a static SPA. Route checks
+//   ensure API paths are handled by Express while non-API requests return
+//   `index.html` so client-side routing operates correctly.
+//
+// Quick dev tips:
+// - Use `npm run dev` in `server/` to run with automatic reload (Node 18+).
+// - Use the admin seeding endpoint only in development; protect it with
+//   `ADMIN_SEED_KEY` in production environments.
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
@@ -8,19 +27,22 @@ import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import Product from './models/Product.js';
 import seedProducts from './data/seedProducts.js';
+import { ADMIN_SEED_KEY, CORS_ORIGIN, ENABLE_DEBUG_ROUTES, MONGO_URI, PORT } from './utils/config.js';
+
+// Create the application and configure runtime defaults.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientPath = path.join(__dirname, '../client');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mono-store';
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://shopstoredemo.netlify.app';
-const ENABLE_DEBUG_ROUTES = String(process.env.ENABLE_DEBUG_ROUTES || '').toLowerCase() === 'true' || process.env.NODE_ENV !== 'production';
-const ADMIN_SEED_KEY = process.env.ADMIN_SEED_KEY || '';
+// Normalize origin strings for CORS validation, removing extra slashes.
 const normalizeOrigin = origin => String(origin || '').trim().replace(/\/+$/, '');
 const ALLOWED_ORIGINS = CORS_ORIGIN
   .split(',')
   .map(normalizeOrigin)
   .filter(Boolean);
 
+// Enable CORS only for allowed origin values and parse JSON request payloads.
 app.use(cors(
   ALLOWED_ORIGINS.length
     ? {
@@ -36,6 +58,7 @@ app.use(cors(
 ));
 app.use(express.json());
 
+// Health-check handler for both root API and internal monitoring.
 const healthHandler = (req, res) => {
   res.json({
     status: 'ok',
@@ -52,6 +75,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 
+// Admin-only endpoint used to reset and seed the products collection for development.
 app.post('/api/admin/seed-products', async (req, res) => {
   if (!ADMIN_SEED_KEY) {
     return res.status(404).json({ message: 'Not found' });
@@ -92,6 +116,14 @@ if (ENABLE_DEBUG_ROUTES) {
     }
   });
 }
+
+app.use(express.static(clientPath));
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/api/health') {
+    return next();
+  }
+  res.sendFile(path.join(clientPath, 'index.html'));
+});
 
 async function startServer() {
   try {

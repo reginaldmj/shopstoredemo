@@ -1,7 +1,9 @@
+// Express middleware that protects API routes using Bearer JWT tokens.
+// If a valid token is present, the user is loaded and attached to req.user.
+
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret_change_me';
+import { JWT_SECRET } from '../utils/config.js';
 
 export default async function auth(req, res, next) {
   try {

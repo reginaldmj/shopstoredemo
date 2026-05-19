@@ -1,25 +1,17 @@
+// Authentication routes for user signup, login, and session management.
+// Uses JWTs for token-based authorization and the User model for credential storage.
+
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import { JWT_EXPIRES_IN, JWT_SECRET } from '../utils/config.js';
+import { sanitizeUser } from '../utils/user.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret_change_me';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 function signToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
-
-function sanitizeUser(user) {
-  return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    bio: user.bio,
-    avatarUrl: user.avatarUrl,
-    createdAt: user.createdAt
-  };
 }
 
 router.post('/register', async (req, res) => {

@@ -1,18 +1,11 @@
+// Profile API routes for authenticated user profile retrieval and updates.
+// Protected by auth middleware to ensure only logged-in users can access these endpoints.
+
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { sanitizeUser } from '../utils/user.js';
 
 const router = express.Router();
-
-function sanitizeUser(user) {
-  return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    bio: user.bio,
-    avatarUrl: user.avatarUrl,
-    createdAt: user.createdAt
-  };
-}
 
 router.get('/', auth, async (req, res) => {
   return res.json({ profile: sanitizeUser(req.user) });

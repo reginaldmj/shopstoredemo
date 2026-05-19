@@ -1,3 +1,6 @@
+// User model definition.
+// Stores hashed passwords and provides a comparePassword helper for authentication.
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 

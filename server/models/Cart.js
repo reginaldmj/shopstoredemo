@@ -1,3 +1,6 @@
+// Simple cart model used as a single demo cart container.
+// Each item stores a reference to a Product and a quantity.
+
 import mongoose from 'mongoose';
 
 const cartSchema = new mongoose.Schema({

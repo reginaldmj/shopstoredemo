@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!--
+    ShopStore client shell.
+    This page loads the reusable page fragments and client scripts
+    that drive the single-page storefront experience.
+  -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MONO — Modern E-Commerce</title>
@@ -77,8 +82,8 @@
         <div class="total-row"><span>Shipping</span><span>Free</span></div>
           <div class="total-row total-final"><span>Total</span><span id="drawerTotal">$0.00</span></div>
       </div>
-      <button class="btn-checkout" onclick="closeCart();showPage('cart')">Checkout →</button>
-      <button class="btn-view-cart" onclick="closeCart();showPage('cart')">View Full Cart</button>
+      <button class="btn-checkout" data-route="cart" data-action="close">Checkout →</button>
+      <button class="btn-view-cart" data-route="cart" data-action="close">View Full Cart</button>
     </div>
   </aside>
 
@@ -92,7 +97,7 @@
         <h1 class="hero-title">Objects<br><em>Worth</em><br>Keeping</h1>
         <p class="hero-sub">Everyday objects designed with intention. Crafted to last, made to be loved.</p>
         <div class="hero-ctas">
-          <button class="btn-primary" onclick="showPage('shop')">Shop Now</button>
+          <button class="btn-primary" data-route="shop">Shop Now</button>
           <button class="btn-ghost">Explore Collections</button>
         </div>
       </div>
@@ -106,19 +111,19 @@
 
     <!-- Category Strips -->
     <section class="categories">
-      <div class="cat-card" onclick="showPage('shop')">
+      <div class="cat-card" data-route="shop">
         <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80" alt="Accessories" />
         <div class="cat-label">Accessories</div>
       </div>
-      <div class="cat-card" onclick="showPage('shop')">
+      <div class="cat-card" data-route="shop">
         <img src="https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&q=80" alt="Footwear" />
         <div class="cat-label">Footwear</div>
       </div>
-      <div class="cat-card" onclick="showPage('shop')">
+      <div class="cat-card" data-route="shop">
         <img src="https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&q=80" alt="Apparel" />
         <div class="cat-label">Apparel</div>
       </div>
-      <div class="cat-card" onclick="showPage('shop')">
+      <div class="cat-card" data-route="shop">
         <img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=80" alt="Tech" />
         <div class="cat-label">Tech</div>
       </div>
@@ -128,7 +133,7 @@
     <section class="section">
       <div class="section-header">
         <h2 class="section-title">Featured Products</h2>
-        <a href="#" class="section-link" onclick="showPage('shop'); return false;">View all →</a>
+        <a href="#" class="section-link" data-route="shop">View all →</a>
       </div>
       <div class="product-grid" id="featuredGrid"></div>
     </section>
@@ -220,8 +225,8 @@
   <main id="detailPage" class="page">
     <div class="detail-container">
       <div class="breadcrumb">
-        <a href="/" onclick="showPage('home'); return false;">Home</a> /
-        <a href="/shop" onclick="showPage('shop'); return false;">Shop</a> /
+        <a href="/" data-route="home">Home</a> /
+        <a href="/shop" data-route="shop">Shop</a> /
         <span id="detailBreadcrumb">Product</span>
       </div>
       <div class="detail-layout">
@@ -253,11 +258,11 @@
 
           <div class="detail-actions">
             <div class="qty-stepper large">
-              <button onclick="changeQty(this, -1)">−</button>
+              <button data-action="changeQty" data-delta="-1">−</button>
               <span>1</span>
-              <button onclick="changeQty(this, 1)">+</button>
+              <button data-action="changeQty" data-delta="1">+</button>
             </div>
-            <button class="btn-primary add-cart-btn" onclick="addToCartFromDetail()">Add to Cart</button>
+            <button class="btn-primary add-cart-btn" data-action="addToCartFromDetail">Add to Cart</button>
             <button class="wishlist-btn">♡</button>
           </div>
 
@@ -320,8 +325,8 @@
           <div class="summary-line"><span>Tax (8%)</span><span id="cartTax">$0.00</span></div>
           <div class="summary-divider"></div>
           <div class="summary-line total"><span>Total</span><span id="cartTotal">$0.00</span></div>
-          <button class="btn-primary full-width" onclick="showPage('checkout')">Proceed to Checkout →</button>
-          <button class="btn-ghost full-width" onclick="showPage('shop')">Continue Shopping</button>
+          <button class="btn-primary full-width" data-route="checkout">Proceed to Checkout →</button>
+          <button class="btn-ghost full-width" data-route="shop">Continue Shopping</button>
         </div>
       </div>
     </div>
@@ -369,7 +374,7 @@
               <div class="form-field"><label>CVV</label><input type="text" placeholder="123" /></div>
             </div>
           </div>
-          <button class="btn-primary full-width" onclick="showPage('confirmation')">Place Order — $360.72</button>
+          <button class="btn-primary full-width" data-route="confirmation">Place Order — $360.72</button>
         </div>
         <div class="checkout-summary">
           <h3>Order Summary</h3>
@@ -398,7 +403,7 @@
         <div class="confirm-row"><span>Estimated Delivery</span><strong>April 7–9, 2025</strong></div>
         <div class="confirm-row"><span>Total Paid</span><strong id="confirmTotal">$0.00</strong></div>
       </div>
-      <button class="btn-primary" onclick="showPage('shop')">Continue Shopping</button>
+      <button class="btn-primary" data-route="shop">Continue Shopping</button>
     </div>
   </main>
 
@@ -442,8 +447,8 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2025 MONO. All rights reserved.</p>
-      <p>Powered by Node.js · PostgreSQL · Stripe</p>
+      <p>© 2026 MONO. All rights reserved.</p>
+      <!-- <p>Powered by Node.js · PostgreSQL · Stripe</p> -->
     </div>
   </footer>
 
@@ -452,8 +457,8 @@
   <script>
     // Local: http://127.0.0.1:5000
     // Production: https://your-backend.onrender.com
-    window.STORE_API_URL = window.STORE_API_URL || 'https://shopstoredemo.onrender.com/';
+    window.STORE_API_URL = window.STORE_API_URL || 'http://localhost:5000/';
   </script>
-  <script src="store.js"></script>
+  <script type="module" src="store.js"></script>
 </body>
 </html>

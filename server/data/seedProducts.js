@@ -1,3 +1,4 @@
+// Demo product fixtures used for seeding the database and as a fallback catalog.
 const seedProducts = [
   {
     name: 'Minimal Watch',

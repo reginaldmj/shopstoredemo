@@ -1,1 +1,2 @@
-/* /index.html 200
+# Netlify redirects configuration for the static client.
+# Ensures SPA routing works when the browser reloads on non-root URLs.

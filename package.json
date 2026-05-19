@@ -1,0 +1,19 @@
+{
+  "name": "shopstore",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "npm --workspace=server run dev",
+    "server": "npm --workspace=server start",
+    "seed": "node server/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

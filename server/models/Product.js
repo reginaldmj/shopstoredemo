@@ -1,3 +1,6 @@
+// Product model definition for catalog items.
+// Supports basic product metadata, pricing, images, and variant details.
+
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
